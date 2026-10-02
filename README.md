@@ -40,14 +40,12 @@ The full pipeline is:
 
 | Step | Notebook / file | Input | Output |
 |---|---|---|---|
-| 1. Fit reference and unconstrained models | `fit_reference_model.ipynb` | `data_train.csv` | `model_reference.npz`, `model_unconstrained.npz` |
+| 1. Fit reference and unconstrained models | `fit_reference_model.ipynb` | `data_train.zip` | `model_reference.npz`, `model_unconstrained.npz`, `P_reference_train.npz` |
 | 2. Solve the fairness-constrained problem on the training set | `solve_optimization.ipynb` (calls `individual_fairness.py`) | `P_reference_train.npz` | `P_constrained_{tv,jf,js}.npz` |
-| 3. Fit a fair model to the constrained distributions | `extrapolate_fair_model.ipynb` | `data_train.csv`, `P_constrained_*.npz`, `model_unconstrained.npz` | `model_constrained_{tv,jf,js}.npz` |
-| 4. Evaluate on the test set; reproduce tables and figures | `results.ipynb` | `data_test.csv`, all `model_*.npz` | Table 1, Figures 1–3, constraint-violation statistics |
+| 3. Fit a fair model to the constrained distributions | `extrapolate_fair_model.ipynb` | `data_train.zip`, `P_constrained_*.npz`, `model_unconstrained.npz` | `model_constrained_{tv,jf,js}.npz` |
+| 4. Evaluate on the test set; reproduce tables and figures | `results.ipynb` | `data_test.zip`, all `model_*.npz` | Table 1, Figures 1–3, constraint-violation statistics |
 
 Step 2 is run once per distance (change the `distance` argument), and step 3 once per resulting `P_constrained_*.npz` file. In step 3, the fair model is initialized at the unconstrained model's parameters and fitted by minimizing the squared error between its predicted distributions and the constrained ones with L-BFGS-B.
-
-`P_reference_train.npz` contains the reference model's predicted score distributions on the training essays (`model_reference.predict_proba(...)` on the 1024-dimensional training embeddings).
 
 **All intermediate results are included in `data/`**, so `results.ipynb` can be run directly without repeating steps 1–3. Steps 2 and 3 are computationally expensive (see below).
 
@@ -61,8 +59,8 @@ Step 2 is run once per distance (change the `distance` argument), and step 3 onc
 ├── extrapolate_fair_model.ipynb    # Step 3: fit a fair model to the constrained distributions
 ├── results.ipynb                   # Step 4: all results and figures in the paper
 └── data/
-    ├── data_train.csv              # Training essays (1,498)
-    ├── data_test.csv               # Test essays (659)
+    ├── data_train.zip              # Training essays (1,498), zipped data_train.csv
+    ├── data_test.zip               # Test essays (659), zipped data_test.csv
     ├── P_reference_train.npz       # Reference score distributions on the training set
     ├── P_constrained_tv.npz        # Constrained distributions, total variation
     ├── P_constrained_jf.npz        # Constrained distributions, Jeffreys
@@ -71,6 +69,8 @@ Step 2 is run once per distance (change the `distance` argument), and step 3 onc
     ├── model_unconstrained.npz     # Unconstrained model parameters
     └── model_constrained_{tv,jf,js}.npz  # Fair model parameters per distance
 ```
+
+The essay data are stored as zip archives, each containing a single CSV file, to save space. The notebooks read them directly with `pd.read_csv("data/data_train.zip")`, so they do not need to be extracted.
 
 The CSV files contain the columns `full_text`, `holistic_essay_score` (scores 1–6), `embeddings_1024`, and `embeddings_512`, with embeddings stored as string-encoded lists. The essays are responses to the "Distance Learning" prompt of the [PERSUADE 2.0](https://github.com/scrosseye/persuade_corpus_2.0) corpus; the embeddings are Titan text embeddings at two sizes.
 
@@ -120,3 +120,7 @@ The solver clips small negative values returned by SCS to zero. Entries that are
   year      = {2026}
 }
 ```
+
+## License
+
+[LICENSE]
